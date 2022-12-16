@@ -8,6 +8,7 @@
 #include <array>
 #include <cstdint>
 #include <chrono>
+#include <iostream>
 #include "common.h"
 
 enum class Direction {
@@ -16,11 +17,13 @@ enum class Direction {
 };
 
 struct Frame {
-    Address ap;
-    Address client;
-    Direction direction;
-    TimePoint when = Clock::now();
-    uint8_t type;
+    Address ap{0};
+    Address client{0};
+    Direction direction{Direction::FROM_AP};
+    TimePoint when{Clock::now()};
+    uint8_t type{0};
 };
+
+std::ostream &operator<<(std::ostream &out, const Frame &frame);
 
 #endif //PACKET_OVERFLOW_FRAME_H

@@ -66,3 +66,21 @@ void ConnectionMap::cleanup() {
 ConnectionMap::ConnectionMap(std::size_t capacity, std::size_t count_after_cleanup)
         : capacity{capacity}, count_after_cleanup{count_after_cleanup} {
 }
+
+std::ostream &operator<<(std::ostream &out, const ConnectionMap &map) {
+    out << "Connections:" << std::endl;
+
+    for (const auto &kv: map.connection_stats) {
+        out << "AP: ";
+        write_address(out, kv.first.ap);
+        out << ", client: ";
+        write_address(out, kv.first.client);
+        out << std::endl << kv.second << std::endl;
+    }
+
+    return out;
+}
+
+bool operator==(const Connection& lhs, const Connection& rhs) {
+    return lhs.ap == rhs.ap && lhs.client == rhs.client;
+}

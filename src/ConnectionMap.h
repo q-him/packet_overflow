@@ -10,15 +10,14 @@
 #include "Stats.h"
 #include <functional>
 #include <unordered_map>
+#include <iostream>
 
 struct Connection {
     Address ap;
     Address client;
 };
 
-bool operator==(const Connection& lhs, const Connection& rhs) {
-    return lhs.ap == rhs.ap && lhs.client == rhs.client;
-}
+bool operator==(const Connection& lhs, const Connection& rhs);
 
 template<>
 struct std::hash<Connection> {
@@ -32,6 +31,8 @@ struct std::hash<Connection> {
 struct ConnectionMap {
     ConnectionMap(std::size_t capacity, std::size_t count_after_cleanup);
     void feed(const Frame& frame);
+
+    friend std::ostream &operator<<(std::ostream &out, const ConnectionMap &map);
 private:
     std::size_t capacity;
     std::size_t count_after_cleanup;
