@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <chrono>
 #include <iostream>
-#include "common.h"
+#include "../common.h"
 
 enum class Direction {
     FROM_AP,

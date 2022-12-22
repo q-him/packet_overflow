@@ -5,7 +5,7 @@
 #ifndef PACKET_OVERFLOW_FRAMEGENERATOR_H
 #define PACKET_OVERFLOW_FRAMEGENERATOR_H
 
-#include "../Frame.h"
+#include "../connection_map/Frame.h"
 
 class FrameGenerator {
 public:

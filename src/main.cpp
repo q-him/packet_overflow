@@ -7,13 +7,17 @@
 #include <mutex>
 #include <queue>
 #include "common.h"
-#include "ConnectionMap.h"
+#include "connection_map/ConnectionMap.h"
 #include "frame_generator/RandomFrameGenerator.h"
 #include "frame_generator/ValidFrameGenerator.h"
 
 using namespace std::chrono_literals;
 
-static ConnectionMap map(32, 16);
+constexpr std::size_t THREAD_COUNT = 64;
+constexpr std::chrono::duration<double, std::milli> VALID_FRAME_INTERVAL = 3ms;
+constexpr std::chrono::duration<double, std::milli> RANDOM_FRAME_INTERVAL = 1ms;
+
+static ConnectionMap map(512, 192);
 static std::queue<Frame> frames;
 static std::mutex frames_mutex;
 
@@ -47,13 +51,13 @@ std::vector<Address> load_addresses(const std::string &path) {
 }
 
 [[noreturn]] void generator_thread(
-        FrameGenerator &generator,
+        std::unique_ptr<FrameGenerator> generator,
         std::chrono::duration<double, std::milli> sleep_time
 ) {
     while (true) {
         std::this_thread::sleep_for(sleep_time);
         std::lock_guard lock{frames_mutex};
-        frames.push(generator.generate());
+        frames.push(generator->generate());
     }
 }
 
@@ -84,13 +88,40 @@ std::vector<Address> load_addresses(const std::string &path) {
     auto clients = load_addresses("../clients.txt");
     ValidFrameGenerator valid_generator{aps, clients};
 
-    std::thread valid_generator_thread {generator_thread, std::ref(valid_generator), 500ms};
-    std::thread random_generator_thread {generator_thread, std::ref(random_generator), 500ms};
+    constexpr std::size_t valid_threads = THREAD_COUNT / 2;
+    constexpr std::size_t random_threads = THREAD_COUNT - valid_threads;
+
+    std::vector<std::thread> threads {THREAD_COUNT};
+
+    for (std::size_t i = 0; i < valid_threads; i++) {
+        std::unique_ptr<FrameGenerator> generator = std::make_unique<ValidFrameGenerator>(aps, clients);
+        threads.emplace_back(generator_thread, std::move(generator), VALID_FRAME_INTERVAL);
+    }
+
+    for (std::size_t i = 0; i < random_threads; i++) {
+        std::unique_ptr<FrameGenerator> generator = std::make_unique<RandomFrameGenerator>();
+        threads.emplace_back(generator_thread, std::move(generator), RANDOM_FRAME_INTERVAL);
+    }
+
     std::thread feeder {feeder_thread};
 
+//    while (true) {
+//        std::cin.get();
+//        std::lock_guard lock{frames_mutex};
+//        std::cout << map << std::endl;
+//    }
+
+    std::size_t max_count = 0;
     while (true) {
-        std::cin.get();
-        std::lock_guard lock{frames_mutex};
-        std::cout << map << std::endl;
+        std::size_t count;
+        {
+            std::lock_guard lock {frames_mutex};
+            count = frames.size();
+        }
+
+        if (count > max_count) {
+            max_count = count;
+            std::cout << "New maximum: " << max_count << std::endl;
+        }
     }
 }

@@ -7,7 +7,7 @@
 
 #include <array>
 #include <iostream>
-#include "common.h"
+#include "../common.h"
 
 struct Stats {
     TimePoint first_seen = TimePoint();
